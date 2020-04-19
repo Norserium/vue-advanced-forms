@@ -1,0 +1,8 @@
+{
+	"short_name": "vue-advanced-forms",
+	"name": "vue-advanced-forms",
+	"start_url": "./index.html",
+	"display": "standalone",
+	"theme_color": "#3fb37f",
+	"background_color": "#ffffff"
+  }
