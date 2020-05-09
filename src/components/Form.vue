@@ -681,7 +681,7 @@ export default {
 				}
 			);
 		},
-		updateMeta(values) {
+		setFieldsMeta(values) {
 			const normalizedValues = flattenMeta(values);
 			for (const name of ownProperties(flattenMeta)) {
 				if (this.fields[name]) {
