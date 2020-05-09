@@ -102,7 +102,6 @@ export const formDefaults = {
 			//        }
 			//     }
 			// ]
-			console.log(data)
 
 			const { fieldMeta } = form.settings;
 			const validations = mergeValidations(data, this.fieldMeta);
