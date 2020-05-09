@@ -13,7 +13,7 @@ any developer should handle:
 
 It may be sometime pretty tedious, and this library is trying to make it as easy as it can be.
 
-<BasicExample/>
+<basic-example/>
 
 ```html
 <script>

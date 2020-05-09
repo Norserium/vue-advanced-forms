@@ -77,9 +77,13 @@ export function getValidator(rules) {
 	}
 	return (...value) => {
 		return new Promise((resolve, reject) => {
-			Promise.all(validators.map(validator => validator(...value))).then(validations => {
-				resolve(validations);
-			});
+			Promise.all(validators.map(validator => validator(...value)))
+				.then(validations => {
+					resolve(validations);
+				})
+				.catch((data) => {
+					reject(data);
+				});
 		});
 	};
 }

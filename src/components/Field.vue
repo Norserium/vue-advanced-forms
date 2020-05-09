@@ -10,10 +10,10 @@ export const fieldDefaults = {
 				form.validate(field.name);
 			}
 		},
-		onFocus({ event, field, form }) {
+		onFocus({ field, form }) {
 
 		},
-		onBlur({ event, field, form }) {
+		onBlur({ field, form }) {
 			form.setFieldMeta(field.name, {
 				touched: true
 			});
@@ -77,10 +77,6 @@ export default {
 		onInput: {
 			type: Function,
 			default: fieldDefaults.behavior.onInput
-		},
-		onChange: {
-			type: Function,
-			default: fieldDefaults.behavior.onChange
 		},
 		onValidate: {
 			type: Function,
@@ -181,6 +177,9 @@ export default {
 				// Props
 				validation: this.validation,
 				validationOptions: this.validationOptions,
+				// Methods:
+				setValue: this.setValue,
+				setMeta: this.setMeta,
 				ref: this
 			};
 		},
@@ -199,21 +198,27 @@ export default {
 		getInitialValue() {
 			return this.defaultValue;
 		},
-		handleFocus(event) {
+		setValue(value) {
+			this.$form.setFieldValue(this.$name, value);
+		},
+		setMeta(meta) {
+			this.$form.setFieldMeta(this.$name, meta);
+		},
+		handleFocus(params) {
 			if (isFunction(this.onFocus)) {
-				this.onFocus({ event, field: this.interface(), form: this.getForm() });
+				this.onFocus({ params, field: this.interface(), form: this.getForm() });
 			}
 		},
-		handleBlur(event) {
+		handleBlur(params) {
 			if (isFunction(this.onBlur)) {
-				this.onBlur({ event, field: this.interface(), form: this.getForm() });
+				this.onBlur({ params, field: this.interface(), form: this.getForm() });
 			}
 		},
-		handleInput(event) {
+		handleInput(params) {
 			if (isFunction(this.onInput)) {
-				this.onInput({ event, field: this.interface(), form: this.getForm() });
+				this.onInput({ params, field: this.interface(), form: this.getForm() });
 			}
-		},
+		}
 	},
 	render(createElement) {
 		if (this.id) {
