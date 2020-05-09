@@ -1,6 +1,6 @@
 {
 	"name": "vue-advanced-forms",
-	"version": "0.0.0",
+	"version": "0.0.1",
 	"description": "The advanced library to create complicated forms easy",
 	"author": "Norserium",
 	"license": "MIT",
@@ -95,5 +95,6 @@
 		"hooks": {
 			"pre-commit": "lint-staged"
 		}
-	}
+	},
+	"private": true
 }
