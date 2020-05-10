@@ -56,6 +56,12 @@ export default {
 			type: [String, Object],
 			default: 'span'
 		},
+		linked: {
+			type: [String, Array],
+			default() {
+				return [];
+			}
+		},
 		value: {},
 		defaultValue: {
 			default: ''
@@ -217,6 +223,13 @@ export default {
 		handleInput(params) {
 			if (isFunction(this.onInput)) {
 				this.onInput({ params, field: this.interface(), form: this.getForm() });
+			}
+		},
+		getLinked() {
+			if (isString(this.linked)) {
+				return [this.linked]
+			} else {
+				return this.linked
 			}
 		}
 	},

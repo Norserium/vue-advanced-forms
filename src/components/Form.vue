@@ -69,7 +69,7 @@ export const formDefaults = {
 
 			const promises = [];
 
-			if (!field || getValue(form.validationOptions, 'formValidate', 'normal') === 'always') {
+			if (!field || getValue(form.validationOptions, 'validateForm', 'normal') === 'always') {
 				form.getFields().forEach(({ name }) => {
 					promises.push({ [name]: form.settings.defaultFieldMeta });
 				});
@@ -77,7 +77,7 @@ export const formDefaults = {
 			}
 
 			form.getFieldRefs().forEach(ref => {
-				if (!field || form.isLinked(field, ref.getName())) {
+				if (!field || getValue(form.validationOptions, 'validateField', 'normal') === 'always' || form.isLinked(field, ref)) {
 					promises.push(form.validateField(ref));
 				}
 			});
@@ -461,8 +461,9 @@ export default {
 			return Object.keys(this.fields).filter(field => field !== name && field.indexOf(name) === 0);
 		},
 
-		isLinked(firstName, secondName) {
-			return firstName === secondName || firstName.indexOf(secondName) === 0;
+		isLinked(firstFieldName, secondFieldRef) {
+			const secondFieldName = secondFieldRef.getName();
+			return (firstFieldName === secondFieldName || firstFieldName.indexOf(secondFieldName) === 0) || secondFieldRef.getLinked().indexOf(firstFieldName) !== -1;
 		},
 		registerField(field) {
 			// Generate the id
