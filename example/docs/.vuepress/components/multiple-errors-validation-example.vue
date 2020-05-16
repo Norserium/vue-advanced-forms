@@ -1,6 +1,7 @@
 <script>
 	import { VueForm, FieldArray, customize, formDefaults } from 'vue-advanced-forms';
 	import Field from './service/field-multiple-errors';
+	import ExampleWrapper from './service/example-wrapper';
 
 	const CustomForm = customize(VueForm, {
 		fieldMeta: {
@@ -23,7 +24,7 @@
 
 	export default {
 		components: {
-			Field, CustomForm, VueForm,
+			ExampleWrapper, Field, CustomForm, VueForm,
 		},
 		methods: {
 			validate(value) {
@@ -46,17 +47,9 @@
 </script>
 
 <template>
-	<div class="example">
-		<CustomForm>
-			<Field placeholder="Login" name="login" />
-			<Field placeholder="Password" name="password" :validation="validate" />
-		</CustomForm>
-	</div>
+	<example-wrapper title="Multiple errors validation example">
+		<custom-form>
+			<field placeholder="Password" name="password" :validation="validate" />
+		</custom-form>
+	</example-wrapper>
 </template>
-
-<style lang="scss">
-	.example {
-		margin-top: 24px;
-		margin-bottom: 24px;
-	}
-</style>

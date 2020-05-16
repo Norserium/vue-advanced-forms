@@ -78,7 +78,7 @@ export default {
 		</field>
 		<field name="users[1]" v-slot="field">
 			<input v-model="field.value" v-on="field.events"/>
-		</field>****
+		</field>
 		<button type="submit"> Submit </button>
 	</vue-form>
 </template>

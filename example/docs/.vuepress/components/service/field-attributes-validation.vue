@@ -18,44 +18,21 @@
 		components: {
 			CustomField
 		},
-		props: ['validation', 'validationOptions', 'name', 'required', 'max', 'min']
+		props: ['validation', 'validationOptions', 'name', 'required', 'max', 'min'],
+		inheritAttrs: false
 	};
 </script>
 
 <template>
-	<CustomField class="field-attributes-validation" v-bind="$props" v-slot="field">
+	<custom-field class="input-wrapper" v-bind="$props" v-slot="field">
 		<input
-			:class="[
-				'field-attributes-validation__input',
-				field.meta.error ? 'field-attributes-validation__input--invalid' : '',
-			]"
-			:required="required"
-			:max="max"
-			:min="min"
+			class="input"
+			:class="{
+				'input-error': field.meta.error
+			}"
 			v-model="field.value"
-			v-on="{...field.events, ...$listeners}"
+			v-on="field.events"
 			v-bind="$attrs"
 		/>
-	</CustomField>
+	</custom-field>
 </template>
-
-<style lang="scss">
-	.field-attributes-validation {
-		margin-bottom: 16px;
-		transition: 0.5s;
-		display: flex;
-		flex-direction: column;
-		line-height: 1.8;
-		&__input {
-			&--invalid {
-				border-color: #E11;
-			}
-		}
-
-		&__errors {
-			font-size: 11px;
-			margin-top: 3px;
-			color: #E11;
-		}
-	}
-</style>

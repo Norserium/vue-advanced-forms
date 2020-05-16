@@ -124,16 +124,43 @@ The `Field` and `FieldArray` components `validation` function will be executed o
 You can pass a method to `validation` prop, that will return the new field meta as an object or as an array of objects.
 
 ```html
-<Field :validation="password" />
+<field :validation="password" />
 ```
 
 ```js
-password({ value, field, form}) {
+password(value) {
 	return {
 		error: value.length > 6 ? 'Your password is too hard, mortal!' : null
 	}
 }
 ```
+
+#### Targeting other fields
+
+Sometimes you need to use other fields values in your validation function. For example, for password confirmation.
+```js
+confirmation(value, { form }) {
+	return {
+		error: value !== form.getFieldValue('password') ? 'Passwords should be equal' : null
+	}
+}
+```
+
+```html
+<field name="password" v-slot="field">
+	...
+</field>
+<field name="confirmation" v-slot="field" :validation="confirmation" :validation-options="{ 
+	linkedFields: ['password'] 
+}">
+	...
+</field>
+
+```
+
+<linked-validation-example/>
+
+
 
 ### Validation string / object
 
@@ -157,7 +184,7 @@ If your validator has parameters, the definition of validator will be more compl
 import { registerValidator } from 'vue-advanced-forms';
 
 registerValidator('length', {
-	validator: (min, max) => {
+	validator: (value, {min, max}) => {
 		if (value.length > max) {
 			return `Length can't be more than ${max}`
 		} else if (value.length < min) {
@@ -173,12 +200,12 @@ registerValidator('length', {
 
 Global validators can be used by passing their name to `validation` prop of `Field` or `FieldArray` components:
 ```html
-<Field validation="required" />
+<field validation="required" />
 ```
 
 You can combine the validators by `|` operator and pass the parameters by `:` operator:
 ```html
-<Field validation="required|length:3,10" />
+<field validation="required|length:3,10" />
 ```
 
 Alternatively, you can pass the object to `validation` field. The key should correspondent to 
@@ -191,16 +218,50 @@ validator name and value can has the following types:
 This approach is more flexible and can be illustrated by the following examples:
 
 ```html
-<Field :validation="{ required: condition }" />
+<field :validation="{ required: condition }" />
 ```
 
 ```html
-<Field :validation="{ required: true, length: [3, 10] }" />
+<field :validation="{ required: true, length: [3, 10] }" />
 ```
 
 ```html
-<Field :validation="{ required: true, length: { min: 3, max: 10 } }" />
+<field :validation="{ required: true, length: { min: 3, max: 10 } }" />
 ```
+
+#### Targeting other fields
+
+If you need to use other fields while validation use their names with `@` symbol ahead:
+```html
+<field name="password" />
+<field name="confirmation" validation="confirm:@password" />
+```
+
+The definition of validator stays the same:
+```js
+registerValidator('confirm', {
+	validator: (value, { target }) => {
+		return value !== target ? 'Passwords should be equal' : null;
+	},
+	params: ['target']
+})
+```
+
+<targeting-validation-example/>
+
+#### Infinity params
+
+If you need to use pass infinity params, you should register validator without params option. All params then will be passed as array in second parameter
+```js
+registerValidator('allowed-values', (value, params) => (
+	params.indexOf(value) === -1 ? `The value should be in the allowed values list ${params}` : null
+))
+```
+
+```html
+<field name="confirmation" validation="allowed-values:1,2,3,4,5,6,7" />
+```
+
 
 ## Options
 
@@ -210,9 +271,10 @@ By default, you can set the following options:
 - **`onBlur`**, use this option to tell form or field to run validation in `onBlur` handler. Default is `true`.
 - **`onMount`**, use this option to tell form or field to run validation in `onMount` handler. Default is `false`.
 - **`onChange`**, use this option to tell form or field to run validation in `onChange` handler. Default is `true`.
+- **`linkedFields`**, the list of fields which lead to validation of this field (on their validation)
 
 Also, there are specific options for `Form`:
-- **`validateForm`**, use this option to tell form when form should be validated (`never`, `normal`, `always`). Default is `normal`, it means that form will be validated only on submit or invoking `validate` method, but not on field change.
+- **`validateForm`**, use this option to tell form when form should be validated (`never`, `normal`, `always`). Default is `normal`, it means that form will be validated only on submit or invoking `validate` method, but not on field validation (on blur, change and etc.)
 
 
 ## Customizing
@@ -420,7 +482,7 @@ const CustomField = customize(Field, {
 ```
 
 ```html
-<CustomField required  />
-<CustomField type="number" min="0" max="120"  />
-<CustomField type="number" min="60" max="250" />
+<custom-field required  />
+<custom-field type="number" min="0" max="120"  />
+<custom-field type="number" min="60" max="250" />
 ```

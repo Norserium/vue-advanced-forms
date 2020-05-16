@@ -4,7 +4,7 @@ title: Overview
 
 # Overview
 
-This library is highly inpired by [Formik](https://jaredpalmer.com/formik/docs/guides/form-submission) library and [AngularJS](https://angularjs.org/) forms. 
+This library is highly inpired by [Formik](https://jaredpalmer.com/formik/docs/guides/form-submission), [VeeValidate](https://logaretm.github.io/vee-validate/) libraries and [AngularJS](https://angularjs.org/) forms. 
 Though the building forms with Vue is more easier than with React, there are still tasks, that
 any developer should handle:
 - store the values and field/form meta
@@ -36,19 +36,17 @@ It may be sometime pretty tedious, and this library is trying to make it as easy
 </script>
 
 <template>
-	<ExampleWrapper>
-		<vue-form component="form" v-slot="form" :onSubmit="submit">
-			<field name="email" :validation="required" v-slot="field">
-				<input v-model="field.value" v-on="field.events">
-				<div v-if="field.meta.error"> {{ field.meta.error }} </div>
-			</field>
-			<field name="password" :validation="required" v-slot="field">
-				<input v-model="field.value" v-on="field.events">
-				<div v-if="field.meta.error"> {{ field.meta.error }} </div>
-			</field>
-			<button :disabled="!form.meta.valid" type="submit"> Submit </button>
-		</vue-form>
-	</ExampleWrapper>
+	<vue-form component="form" v-slot="form" :onSubmit="submit">
+		<field name="email" :validation="required" v-slot="field">
+			<input v-model="field.value" v-on="field.events">
+			<div v-if="field.meta.error"> {{ field.meta.error }} </div>
+		</field>
+		<field name="password" :validation="required" v-slot="field">
+			<input v-model="field.value" v-on="field.events">
+			<div v-if="field.meta.error"> {{ field.meta.error }} </div>
+		</field>
+		<button :disabled="!form.meta.valid" type="submit"> Submit </button>
+	</vue-form>
 </template>
 ```
 

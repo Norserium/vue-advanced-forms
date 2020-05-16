@@ -14,10 +14,10 @@
 	<example-wrapper>
 		<vue-form v-slot="form">
 			<field-array name="emails" v-slot="array">
-				<field :name="name" v-for="name in array.names" v-slot="field">
-					<input v-model="field.value" v-on="field.events"/>
+				<field class="input-wrapper" :name="name" v-for="name in array.names" v-slot="field">
+					<input class="input" v-model="field.value" v-on="field.events"/>
 				</field>
-				<button @click="array.push('')"> Add Field </button>
+				<button class="button" @click="array.push('')"> Add Field </button>
 			</field-array>
 			<data-output title="values" :value="form.values"/>
 		</vue-form>

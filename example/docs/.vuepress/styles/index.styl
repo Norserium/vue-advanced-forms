@@ -1,11 +1,62 @@
-input, textarea, select
+.input {
 	display: block;
 	background: white;
-	border-radius: 10px;
-	border: solid 1px #EEE;
+	border: solid 1px #AAA;
 	padding: 8px 16px;
 	outline: none;
-	margin-bottom: 10px;
+}
 
-input[type='radio'], input[type='checkbox']
+.input-wrapper {
+	display: block;
+	& + & {
+		margin-top: 10px;
+	}
+}
+
+.input[type='radio'], .input[type='checkbox'] {
 	display: inline-block;
+}
+
+
+.color-warning {
+	color: gold;
+}
+
+.color-error {
+	color: #E11;
+}
+
+.border-warning {
+	border-color: gold;
+}
+
+.border-error {
+	border-color: #E11;
+}
+
+.input-warning {
+	@extend .border-warning;
+}
+
+.input-error {
+	@extend .border-error;
+}
+
+.validation-text {
+	margin-top: 3px;
+	font-size: 11px
+}
+
+.error-text {
+	@extend .validation-text;
+	@extend .color-error;
+}
+
+.button {
+	margin-top: 12px;
+	//background: #282C34;
+	//color: white;
+	//padding: 12px 24px;
+	//border: none;
+	//cursor: pointer;
+}

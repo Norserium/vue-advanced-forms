@@ -12,24 +12,37 @@
 				}
 			},
 			submit({ values }) {
-				console.log(values)
+				console.log(values);
 			}
 		}
 	};
 </script>
 
 <template>
-	<ExampleWrapper>
-		<vue-form component="form" v-slot="form" :onSubmit="submit">
-			<field name="email" :validation="required" v-slot="field">
-				<input v-model="field.value" v-on="field.events">
-				<div v-if="field.meta.error"> {{ field.meta.error }} </div>
+	<example-wrapper>
+		<vue-form v-slot="form" :on-submit="submit" class="flex">
+			<field class="input-wrapper" name="email" :validation="required" v-slot="field">
+				<input class="input" v-model="field.value" v-on="field.events">
+				<div class="error-text" v-if="field.meta.error"> {{ field.meta.error }} </div>
 			</field>
-			<field name="password" :validation="required" v-slot="field">
-				<input v-model="field.value" v-on="field.events">
-				<div v-if="field.meta.error"> {{ field.meta.error }} </div>
+			<field class="input-wrapper" name="password" :validation="required" v-slot="field">
+				<input class="input" v-model="field.value" v-on="field.events">
+				<div class="error-text" v-if="field.meta.error"> {{ field.meta.error }} </div>
 			</field>
-			<button :disabled="!form.meta.valid" type="submit"> Submit </button>
+			<button class="button" :disabled="!form.meta.valid" type="submit"> Submit </button>
 		</vue-form>
-	</ExampleWrapper>
+	</example-wrapper>
 </template>
+
+<style lang="scss">
+	.basic-example {
+		input {
+			margin-bottom: 8px;
+		}
+		.errors {
+			font-size: 12px;
+			margin-bottom: 8px;
+			color: red;
+		}
+	}
+</style>
