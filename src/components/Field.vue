@@ -1,24 +1,40 @@
 <script>
 import debounce from 'debounce';
-import { getValue, isFunction, isObject, isString, isUndefined, isArray } from '../service/common';
-import { getValidator } from '../service/core';
+import {getValue, isFunction, isObject, isString, isUndefined, isArray, initDebounce } from '../service/common';
+import { getValidator, parseValidator } from '../service/core';
 
 export const fieldDefaults = {
+
 	behavior: {
 		onMount({ field, form }) {
+
+		},
+		onCreate({ field, form }) {
 			if (getValue({ ...form.validationOptions, ...field.validationOptions }, 'onMount', false)) {
-				form.validate(field.name);
+				form.validateField(field.name);
 			}
 		},
 		onFocus({ field, form }) {
 
+		},
+		onGetLinkedFields({ field }) {
+			const linkedFields = [];
+			if (field.validationOptions.linkedFields) {
+				linkedFields.push(...field.validationOptions.linkedFields);
+			}
+			if (isString(field.validation) || isObject(field.validation)) {
+				parseValidator(field.validation).forEach(({ links }) => {
+					linkedFields.push(...links);
+				});
+			}
+			return linkedFields;
 		},
 		onBlur({ field, form }) {
 			form.setFieldMeta(field.name, {
 				touched: true
 			});
 			if (getValue({ ...form.validationOptions, ...field.validationOptions }, 'onBlur', true)) {
-				form.validate(field.name);
+				form.validateField(field.name);
 			}
 		},
 		onInput({ field, form }) {
@@ -28,17 +44,26 @@ export const fieldDefaults = {
 				});
 			}
 		},
+		onChange({ field, form }) {
+			if (getValue({ ...form.validationOptions, ...field.validationOptions }, 'onChange', true)) {
+				field.debouncedValidate();
+			}
+		},
 		onValidate({ field, form }) {
 			const validation = field.validation;
 			if (!isUndefined(validation)) {
 				if (isFunction(validation)) {
 					return validation(field.value, { form, field });
 				} else if (isArray(validation)) {
-					return validation.map(v => isFunction(v) ? v(field.value, { form, field }) : {} );
+					return Promise.all(validation.map(v => isFunction(v) ? v(field.value, { form, field }) : {} ));
 				} else if (isString(validation) || isObject(validation)) {
-					return getValidator(validation)(field.value, { form, field });
+					return Promise.all(
+						parseValidator(validation, form).map(({ validator, params }) => {
+							return validator(field.value, params, { form, field });
+						})
+					);
 				}
-				console.warn(`Can't process the validator ${validation}`);
+				console.warn(`Can't process the validator ${validation} for the field ${field.name}`);
 			}
 			return form.settings.defaultFieldMeta;
 		}
@@ -56,12 +81,6 @@ export default {
 			type: [String, Object],
 			default: 'span'
 		},
-		linked: {
-			type: [String, Array],
-			default() {
-				return [];
-			}
-		},
 		value: {},
 		defaultValue: {
 			default: ''
@@ -69,12 +88,18 @@ export default {
 		validation: {
 			type: [String, Function, Object],
 		},
+		validationOptions: {
+			type: Object,
+			default() {
+				return {};
+			}
+		},
 		name: {
 			type: String,
 		},
 		onFocus: {
 			type: Function,
-			default: fieldDefaults.behavior.onChangeField
+			default: fieldDefaults.behavior.onFocus
 		},
 		onBlur: {
 			type: Function,
@@ -88,9 +113,21 @@ export default {
 			type: Function,
 			default: fieldDefaults.behavior.onValidate
 		},
+		onChange: {
+			type: Function,
+			default: fieldDefaults.behavior.onChange
+		},
 		onMount: {
 			type: Function,
 			default: fieldDefaults.behavior.onMount
+		},
+		onCreate: {
+			type: Function,
+			default: fieldDefaults.behavior.onCreate
+		},
+		onGetLinkedFields: {
+			type: Function,
+			default: fieldDefaults.behavior.onGetLinkedFields
 		}
 	},
 	data() {
@@ -133,6 +170,11 @@ export default {
 					}
 				});
 			}
+		},
+		validation() {
+			if (this.$form && !this.validation) {
+				this.$form.validateField(this.$name);
+			}
 		}
 	},
 	created() {
@@ -140,9 +182,14 @@ export default {
 			throw new Error(`Can't create the Field instance (name: ${this.$name}) because it's not contained in any form`);
 		} else {
 			this.$form.mountField(this);
-			if (this.onMount) {
-				this.onMount({ field: this.interface(), form: this.$form });
+			if (this.onCreate) {
+				this.onCreate({ field: this.interface(), form: this.$form });
 			}
+			// Arguable solution
+			this.debouncedValidate = debounce(
+				this.validate,
+				getValue({ ...this.$form.validationOptions, ...this.validationOptions }, 'debounce', 0)
+			);
 		}
 	},
 	destroyed() {
@@ -167,12 +214,9 @@ export default {
 					return self.$value;
 				},
 				set value(value) {
-					self.$form.setFieldValue(self.$name, value).then(() => {
-						debounce(
-							self.$form.validate(self.$name),
-							getValue({ ...self.$form.validationOptions, ...self.validationOptions }, 'debounce', 0)
-						);
-					});
+					self.$form.setFieldValue(self.$name, value, { internal: true }).then(() => {
+						self.onChange({ field: self.interface(), form: self.$form });
+					})
 				},
 				// Events
 				events: {
@@ -186,6 +230,8 @@ export default {
 				// Methods:
 				setValue: this.setValue,
 				setMeta: this.setMeta,
+				validate: this.validate,
+				debouncedValidate: this.debouncedValidate,
 				ref: this
 			};
 		},
@@ -204,8 +250,13 @@ export default {
 		getInitialValue() {
 			return this.defaultValue;
 		},
+		getLinkedFields() {
+			return this.onGetLinkedFields({ field: this.interface(), form: this.$form });
+		},
 		setValue(value) {
-			this.$form.setFieldValue(this.$name, value);
+			this.$form.setFieldValue(this.$name, value, { internal: true }).then(() => {
+				this.onChange({ field: this.interface(), form: this.$form });
+			})
 		},
 		setMeta(meta) {
 			this.$form.setFieldMeta(this.$name, meta);
@@ -225,12 +276,8 @@ export default {
 				this.onInput({ params, field: this.interface(), form: this.getForm() });
 			}
 		},
-		getLinked() {
-			if (isString(this.linked)) {
-				return [this.linked]
-			} else {
-				return this.linked
-			}
+		validate() {
+			return this.$form.validateField(this.$name);
 		}
 	},
 	render(createElement) {

@@ -44,7 +44,87 @@ export const core = {
 	}
 };
 
-export function getValidator(rules) {
+function parseParams(params, form) {
+	const parsed = { ...params };
+	for (const name of ownProperties(params)) {
+		if (params[name] && params[name][0] === '@') {
+			parsed[name] = form ? form.getFieldValue(params[name].slice(1)) : undefined;
+		}
+	}
+	return parsed;
+}
+
+function internalParser(rules) {
+	const result = [];
+	if (isString(rules)) {
+		for (const rule of rules.split('|')) {
+			const [name, params] = rule.split(':');
+			const scheme         = core.validators[name];
+			if (scheme) {
+				const listParams = params ? params.split(',') : [];
+				result.push({
+					params: scheme.params ? arrayToObject(listParams, scheme.params) : listParams,
+					validator: scheme.validator
+				});
+			} else {
+				console.warn(`There is no global validator with name ${name}`);
+			}
+		}
+	} else if (isObject(rules)) {
+		for (const name of ownProperties(rules)) {
+			const scheme = core.validators[name];
+			if (scheme) {
+				let params = {};
+				if (isObject(rules[name])) {
+					params = rules[name]
+				} else if (isArray(rules[name])) {
+					params = scheme.params ? arrayToObject(rules[name], scheme.params) : rules[name]
+				}
+				result.push({
+					params,	validator: scheme.validator
+				});
+			} else {
+				console.warn(`There is no global validator with name ${name}`);
+			}
+		}
+	}
+	return result;
+}
+
+export function parseValidator(rules, form) {
+	const parsedRules = internalParser(rules);
+
+	return parsedRules.map(({validator, params}) => {
+		const links = [];
+		let processedParams = {};
+		if (isObject(params)) {
+			processedParams = {...params};
+			for (const name of ownProperties(processedParams)) {
+				if (processedParams[name] && processedParams[name][0] === '@') {
+					const field = processedParams[name].slice(1)
+					processedParams[name] = form ? form.getFieldValue(field) : undefined;
+					links.push(field);
+				}
+			}
+		} else if (isArray(params)) {
+			processedParams = params.map(param => {
+				if (param && param[0] === '@') {
+					const field = param.slice(1);
+					links.push(field);
+					return form ? form.getFieldValue(field) : undefined;
+				}
+				return param;
+			});
+		}
+		return {
+			links,
+			validator,
+			params: processedParams
+		};
+	});
+}
+
+export function getValidator(rules, { form }) {
 	const validators = [];
 	if (isString(rules)) {
 		for (const rule of rules.split('|')) {
@@ -52,7 +132,7 @@ export function getValidator(rules) {
 			const scheme         = core.validators[name];
 			if (scheme) {
 				const arrayParams = params ? params.split(',') : [];
-				validators.push((value) => scheme.validator(value, arrayToObject(arrayParams, scheme.params)));
+				validators.push((value) => scheme.validator(value, parseParams(arrayToObject(arrayParams, scheme.params), form)));
 			} else {
 				console.warn(`There is no global validator with name ${name}`);
 			}
@@ -63,9 +143,9 @@ export function getValidator(rules) {
 			validators.push((value) => {
 				if (scheme) {
 					if (isObject(rules[name])) {
-						scheme.validator(value, rules[name]);
+						scheme.validator(value, parseParams(rules[name], form));
 					} else if (isArray(rules[name])) {
-						scheme.validator(value, arrayToObject(rules[name], scheme.params));
+						scheme.validator(value, parseParams(arrayToObject(rules[name], scheme.params), form));
 					} else if (rules[name]) {
 						scheme.validator(value, {});
 					}
@@ -98,3 +178,4 @@ export function registerValidator(name, scheme) {
 		core.validators[name] = scheme;
 	}
 }
+

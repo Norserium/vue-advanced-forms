@@ -1,5 +1,6 @@
 import Vue from 'vue';
 import memoize from 'fast-memoize';
+import debounce from 'debounce';
 
 const INFINITY = 1 / 0;
 const ESCAPE_CHARACTERS = /\\(\\)?/g;
@@ -328,4 +329,14 @@ export function arrayToObject(array, names) {
 	return result;
 }
 
-
+const debounces = [];
+export function initDebounce(callback, timeout) {
+	const savedCallback = debounces.find((saved) => saved.callback === callback && saved.timeout === timeout)
+	if (savedCallback) {
+		return savedCallback.debounced;
+	} else {
+		const newCallback = debounce(callback, timeout);
+		debounces.push({ debounced: newCallback, callback, timeout});
+		return newCallback;
+	}
+}

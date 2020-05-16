@@ -61,26 +61,55 @@ export const formDefaults = {
 
 			form.setMeta(defaultFormMeta);
 		},
-
+		onChangeField({ form, field, options }) {
+			if (!options.internal && getValue(form.validationOptions, 'onChange', true)) {
+				form.validateField(field);
+			}
+		},
 		onStartValidate({ form, field }) {
 			form.setMeta({
 				validating: true,
 			});
 
+
 			const promises = [];
 
-			if (!field || getValue(form.validationOptions, 'validateForm', 'normal') === 'always') {
+			const fieldValidation = Boolean(field);
+			const formValidation = !fieldValidation || getValue(form.validationOptions, 'validateForm', 'normal') === 'always';
+
+			if (!fieldValidation) {
 				form.getFields().forEach(({ name }) => {
 					promises.push({ [name]: form.settings.defaultFieldMeta });
 				});
-				promises.push(form.validateForm().then(flattenMeta));
 			}
 
-			form.getFieldRefs().forEach(ref => {
-				if (!field || getValue(form.validationOptions, 'validateField', 'normal') === 'always' || form.isLinked(field, ref)) {
-					promises.push(form.validateField(ref));
-				}
-			});
+			if (formValidation) {
+				promises.push(form.runFormValidation().then(flattenMeta));
+			}
+
+			if (fieldValidation) {
+				let linkedFields = [];
+				form.getFieldRefs().forEach(ref => {
+					const name = ref.getName();
+					if (name !== field && ref.getLinkedFields().some(name => name === field) && linkedFields.indexOf(name) === -1) {
+						linkedFields.push(name);
+					}
+				});
+				linkedFields = linkedFields.filter(name => {
+					const { meta: { dirty }, mounted } = form.getField(name);
+					return dirty && mounted;
+				});
+				form.getFieldRefs().forEach(ref => {
+					const name = ref.getName();
+					if (name === field || linkedFields.indexOf(name) !== -1) {
+						promises.push(form.runFieldValidation(ref));
+					}
+				});
+			} else {
+				form.getFieldRefs().forEach(ref => {
+					promises.push(form.runFieldValidation(ref));
+				});
+			}
 
 			return Promise.all(promises);
 		},
@@ -102,6 +131,7 @@ export const formDefaults = {
 			//        }
 			//     }
 			// ]
+			//console.log(data)
 
 			const { fieldMeta } = form.settings;
 			const validations = mergeValidations(data, this.fieldMeta);
@@ -207,7 +237,7 @@ export default {
 		},
 		component: {
 			type: [String, Object],
-			default: 'span'
+			default: 'form'
 		},
 		onUnmountField: {
 			type: Function,
@@ -353,6 +383,7 @@ export default {
 				setFieldsMeta: this.setFieldsMeta,
 				setMeta: this.setMeta,
 				validate: this.validate,
+				validateField: this.validateField,
 				mountField: this.mountField,
 				unmountField: this.unmountField,
 				submit: this.submit,
@@ -621,7 +652,7 @@ export default {
 				this.updateForm();
 			}
 		},
-		validateForm() {
+		runFormValidation() {
 			const validator = this.validation;
 			return new Promise((resolve, reject) => {
 				if (validator) {
@@ -638,12 +669,12 @@ export default {
 				}
 			});
 		},
-		validateField(field) {
-			const name = field.getName();
+		runFieldValidation(ref) {
+			const name = ref.getName();
 			const { defaultValidatableFieldMeta } = this.settings;
 			return new Promise((resolve, reject) => {
-				if (field.onValidate) {
-					const value = field.onValidate({ field: field.interface(), form: this.interface() });
+				if (ref.onValidate) {
+					const value = ref.onValidate({ field: ref.interface(), form: this.interface() });
 					if (isPromise(value)) {
 						value.then((response) => {
 							resolve(response);
@@ -668,7 +699,7 @@ export default {
 				}
 			});
 		},
-		validate(field) {
+		runValidation(field) {
 			const name = isObject(field) ? field.getName() : field;
 			return this.onStartValidate({ form: this, field: name }).then(
 				(data) => {
@@ -681,6 +712,12 @@ export default {
 					return Vue.nextTick();
 				}
 			);
+		},
+		validateField(field) {
+			return this.runValidation(field);
+		},
+		validate() {
+			return this.runValidation();
 		},
 		setFieldsMeta(values) {
 			const normalizedValues = flattenMeta(values);
