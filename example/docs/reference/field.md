@@ -46,6 +46,7 @@ But it much easy to do if use `v-model` directive:
 </Field>
 ```
 
+<controlled-example/>
 
 ## Props
 
