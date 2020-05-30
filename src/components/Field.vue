@@ -1,18 +1,18 @@
 <script>
 import debounce from 'debounce';
-import {getValue, isFunction, isObject, isString, isUndefined, isArray, initDebounce } from '../service/common';
-import { getValidator, parseValidator } from '../service/core';
+import { getValue, isFunction, isObject, isString, isUndefined, isArray } from '../service/common';
+import { parseValidator } from '../service/core';
 
 export const fieldDefaults = {
 
 	behavior: {
 		onMount({ field, form }) {
-
-		},
-		onCreate({ field, form }) {
 			if (getValue({ ...form.validationOptions, ...field.validationOptions }, 'onMount', false)) {
 				form.validateField(field.name);
 			}
+		},
+		onCreate({ field, form }) {
+
 		},
 		onFocus({ field, form }) {
 
@@ -190,6 +190,11 @@ export default {
 				this.validate,
 				getValue({ ...this.$form.validationOptions, ...this.validationOptions }, 'debounce', 0)
 			);
+		}
+	},
+	mounted() {
+		if (this.onMount) {
+			this.onMount({ field: this.interface(), form: this.$form });
 		}
 	},
 	destroyed() {

@@ -576,7 +576,7 @@ export default {
 			return new Promise((resolve, reject) => {
 				if (name in this.fields) {
 					const field = this.fields[name];
-					if (!field || !field.$controlled || options.forced) {
+					if (!field || !field.controlled || options.forced) {
 						setValueByPath(this.values, name, value);
 						this.updateFieldValue(name, value, options);
 					} else {
