@@ -460,7 +460,9 @@ export default {
 		getInitialValue(name, ref) {
 			const initialValue = getIn(this.initialValues, name);
 			const field        = ref ? ref : this.getFieldRef(name);
-			if (!isUndefined(initialValue)) {
+			if (field && field.controlled) {
+				return field.value;
+			} if (!isUndefined(initialValue)) {
 				return initialValue;
 			} else if (field) {
 				return field.getInitialValue();
@@ -578,12 +580,16 @@ export default {
 					const field = this.fields[name];
 					if (!field || !field.controlled || options.forced) {
 						setValueByPath(this.values, name, value);
-						this.updateFieldValue(name, value, options);
 					} else {
-						this.getFieldRefs(name).forEach(ref => {
-							ref.$emit('change', value);
-						});
+						const ref = this.getFieldRef(name);
+						if (ref) {
+							this.$emit('change', value, {
+								field: ref.interface(),
+								form: this.interface()
+							});
+						}
 					}
+					this.updateFieldValue(name, value, options);
 				} else {
 					console.warn(`Can't set the value for not mounted field ${name}`);
 				}
@@ -748,6 +754,10 @@ export default {
 			if (ownProperties(update).length) {
 				this.setMeta(update, true);
 			}
+			this.$emit('update', {
+				values: freeze(this.values),
+				form: this.interface()
+			});
 		}
 	},
 	render(createElement) {
