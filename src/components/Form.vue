@@ -154,9 +154,11 @@ export const formDefaults = {
 				validating: false,
 			});
 		},
+		onSubmit({ form, params }) {
+			form.emit('update', { form, params });
+		},
 		onStartSubmit({ form, params }) {
 			form.setMeta({
-				submitting: true,
 				submitCount: form.meta.submitCount + 1
 			});
 			form.getFields().forEach(field => {
@@ -166,18 +168,18 @@ export const formDefaults = {
 			});
 			return form.validate().then(() => {
 				if (form.meta.valid) {
-					if (form.onSubmit) {
-						return form.onSubmit({ form, params, values: freeze(form.values) });
+					const promise = form.onSubmit({ form, params, values: freeze(form.values) });
+					if (isPromise(promise)) {
+						form.setMeta({
+							submitting: true,
+						});
+						promise.then(() => {
+							form.setMeta({
+								submitting: false,
+							});
+						});
 					}
 				}
-			});
-		},
-		onSubmit({ form, params, values }) {
-
-		},
-		onEndSubmit({ form, params }) {
-			form.setMeta({
-				submitting: false,
 			});
 		}
 	}
@@ -277,14 +279,11 @@ export default {
 		},
 		onSubmit: {
 			type: Function,
+			default: formDefaults.behavior.onSubmit
 		},
 		onStartSubmit: {
 			type: Function,
 			default: formDefaults.behavior.onStartSubmit
-		},
-		onEndSubmit: {
-			type: Function,
-			default: formDefaults.behavior.onEndSubmit
 		}
 	},
 	data() {
@@ -390,7 +389,11 @@ export default {
 				// Behavior
 				onSubmit: this.onSubmit,
 				// Props
-				validationOptions: this.validationOptions
+				validationOptions: this.validationOptions,
+				// Service
+				emit: (...args) => {
+					this.$emit(...args);
+				}
 			};
 		},
 
@@ -554,6 +557,7 @@ export default {
 
 
 		updateFieldValue(name, value, options) {
+			let valuesChanged = false;
 			const fields = [name, ...this.getChildren(name)];
 
 			fields.forEach(field => {
@@ -570,9 +574,10 @@ export default {
 							options
 						});
 					}
+					valuesChanged = true;
 				}
 			});
-			this.updateForm();
+			this.updateForm(valuesChanged);
 		},
 		setFieldValue(name, value, options = {}) {
 			return new Promise((resolve, reject) => {
@@ -734,12 +739,12 @@ export default {
 			}
 		},
 		submit(params) {
-			const form = this.interface();
-			this.onStartSubmit({ form, params }).then(() => {
-				this.onEndSubmit({ form, params });
+			this.onStartSubmit({
+				form: this.interface(),
+				params
 			});
 		},
-		updateForm() {
+		updateForm(valuesChanged) {
 			const { formMeta } = this.settings;
 
 			const update = {};
@@ -754,10 +759,12 @@ export default {
 			if (ownProperties(update).length) {
 				this.setMeta(update, true);
 			}
-			this.$emit('update', {
-				values: freeze(this.values),
-				form: this.interface()
-			});
+			if (valuesChanged) {
+				this.$emit('update', {
+					values: freeze(this.values),
+					form: this.interface()
+				});
+			}
 		}
 	},
 	render(createElement) {

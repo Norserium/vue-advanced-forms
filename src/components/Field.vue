@@ -202,6 +202,9 @@ export default {
 			this.$form.unmountField(this);
 		}
 	},
+	updated() {
+		console.log('rerender', this.$name)
+	},
 	methods: {
 		interface() {
 			const self = this;
