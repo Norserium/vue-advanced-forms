@@ -1,7 +1,7 @@
 {
 	"name": "vue-advanced-forms",
 	"version": "0.0.1",
-	"description": "The advanced library to create complicated forms easy",
+	"description": "The advanced library to create complicated forms without pain",
 	"author": "Norserium",
 	"license": "MIT",
 	"repository": "Norserium/vue-advanced-forms",
@@ -75,13 +75,8 @@
 		"vue-template-compiler": "^2.6.10"
 	},
 	"dependencies": {
-		"classnames": "^2.2.6",
 		"debounce": "^1.2.0",
-		"deepmerge": "^4.2.2",
-		"easy-bem": "^1.0.2",
-		"fast-memoize": "^2.5.1",
-		"lodash": "^4.17.15",
-		"lodash-es": "^4.17.15"
+		"fast-memoize": "^2.5.1"
 	},
 	"files": [
 		"dist"
@@ -95,6 +90,5 @@
 		"hooks": {
 			"pre-commit": "lint-staged"
 		}
-	},
-	"private": true
+	}
 }
