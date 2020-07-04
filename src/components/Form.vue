@@ -155,7 +155,7 @@ export const formDefaults = {
 			});
 		},
 		onSubmit({ form, params }) {
-			form.emit('update', { form, params });
+			form.emit('submit', { form, params });
 		},
 		onStartSubmit({ form, params }) {
 			form.setMeta({
@@ -604,8 +604,7 @@ export default {
 			});
 		},
 		setFieldMeta(name, value) {
-
-			return new Promise((resolve, reject) => {
+			return new Promise((resolve) => {
 				if (name in this.fields) {
 					const { fieldMeta } = this.settings;
 					fieldMeta.forEach(meta => {
