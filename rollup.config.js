@@ -1,12 +1,10 @@
-import babel from 'rollup-plugin-babel';
-import commonjs from 'rollup-plugin-commonjs';
-import external from 'rollup-plugin-peer-deps-external';
-import resolve from 'rollup-plugin-node-resolve';
-import url from 'rollup-plugin-url';
 import Vue from 'rollup-plugin-vue';
-import pkg from './package.json';
-import minify from 'rollup-plugin-babel-minify';
+import external from 'rollup-plugin-peer-deps-external';
 import visualizer from 'rollup-plugin-visualizer';
+import babel from '@rollup/plugin-babel';
+import commonjs from '@rollup/plugin-commonjs';
+import { terser } from 'rollup-plugin-terser';
+import pkg from './package.json';
 
 export default {
 	input: 'src/index.js',
@@ -31,15 +29,11 @@ export default {
 	plugins: [
 		external(),
 		Vue(),
-		url(),
-		// minify({
-		// 	comments: false
-		// }),
 		babel({
 			exclude: '/node_modules/**',
 			extensions: ['.js', '.jsx', '.es6', '.es', '.mjs', '.vue'],
 		}),
-		resolve(),
+		terser(),
 		commonjs(),
 		visualizer()
 	]
