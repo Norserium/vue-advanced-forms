@@ -4,7 +4,10 @@ title: Overview
 
 # Overview
 
-This library is highly inpired by [Formik](https://jaredpalmer.com/formik/docs/guides/form-submission), [VeeValidate](https://logaretm.github.io/vee-validate/) libraries and [AngularJS](https://angularjs.org/) forms. 
+It's the **field centered** form library. It means that this library would be preferable to use, 
+when you form fields are represented by mounted, physical and visible fields, i.e. component `Field` or `FieldArray`.
+
+This library also is highly inpired by [Formik](https://jaredpalmer.com/formik/docs/guides/form-submission), [VeeValidate](https://logaretm.github.io/vee-validate/) libraries and [AngularJS](https://angularjs.org/) forms. 
 Though the building forms with Vue is more easier than with React, there are still tasks, that
 any developer should handle:
 - store the values and field/form meta

@@ -323,7 +323,7 @@ The example of this array:
 
 It implements the following procedure:
 - Set form meta `validating` to `true`
-- Reset all validable fields meta to default values and run form-level validation if `field` is not passed or `validateOptions.validateForm` value is equal to `always`
+- Reset all **validable** and **mounted** fields meta to default values and run form-level validation if `field` is not passed or `validateOptions.validateForm` is equal to `always`
 - Run all field-level validations if `field` is not passed, otherwise run field-level validations only for the current field and linked fields
 
 #### `onEndValidate`

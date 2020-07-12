@@ -41,7 +41,7 @@ export function isObject(obj) {
 	return obj !== null && typeof obj === 'object';
 }
 
-export function isNull(obj) {getValue;
+export function isNull(obj) {
 	return obj === null;
 }
 
@@ -70,36 +70,6 @@ export function getValue(obj, key, defaultValue = null) {
 export function ownProperties(obj) {
 	return Object.keys(obj);
 }
-
-export function flatten(obj) {
-	const queue = [{
-		element: obj,
-		parent: null
-	}];
-	const result = [];
-	while (queue.length) {
-		let node = queue.pop();
-		if (isObject(node.element) || isArray(node.element)) {
-			for (const field of ownProperties(node.element)) {
-				queue.push({
-					name: field,
-					element: node.element[field],
-					parent: node
-				});
-			}
-		} else {
-			const element = node.element;
-			let branch = '';
-			while (node.parent !== null) {
-				branch = (isArray(node.parent.element) ? `[${node.name}]` : `${node.parent.parent ? '.' : ''}${node.name}`) + branch;
-				node = node.parent;
-			}
-			result[branch] = element;
-		}
-	}
-	return result;
-}
-
 
 export function getIn(object, pathString, defaultValue) {
 	const path = toPath(pathString);
@@ -192,23 +162,6 @@ function toKey(value) {
 	}
 	const result = `${value}`;
 	return (result == '0' && (1 / value) == -INFINITY) ? '-0' : result;
-}
-
-export function splitOnPathAndIndex(name) {
-	const path = toPath(name);
-	return [
-		path.slice(0, path.length - 1),
-		path[path.length - 1]
-	];
-}
-
-export function processName(path) {
-	const result = path.match(/(.*?)\[(\d+)\]?$/);
-	if (result) {
-		return [result[1], result[2]];
-	} else {
-		return [null, null];
-	}
 }
 
 export function toPath(value) {
@@ -327,16 +280,4 @@ export function arrayToObject(array, names) {
 		result[name] = array[index];
 	});
 	return result;
-}
-
-const debounces = [];
-export function initDebounce(callback, timeout) {
-	const savedCallback = debounces.find((saved) => saved.callback === callback && saved.timeout === timeout)
-	if (savedCallback) {
-		return savedCallback.debounced;
-	} else {
-		const newCallback = debounce(callback, timeout);
-		debounces.push({ debounced: newCallback, callback, timeout});
-		return newCallback;
-	}
 }

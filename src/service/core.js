@@ -34,7 +34,7 @@ export const core = {
 		}
 	},
 	init() {
-		this.$form = (name) => {
+		this.$getForm = (name) => {
 			if (this.installed) {
 				return core.vm.$data.forms[name];
 			} else {

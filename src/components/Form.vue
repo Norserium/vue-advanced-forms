@@ -42,10 +42,10 @@ export const formDefaults = {
 	},
 	behavior: {
 		onUnmountField({ form, field }) {
-			form.removeField(field.name);
+			form.updateForm();
 		},
 		onMountField({ form, field }) {
-			// pass
+			form.updateForm();
 		},
 		onInitForm({ form }) {
 			const { defaultFormMeta } = this.settings;
@@ -71,15 +71,16 @@ export const formDefaults = {
 				validating: true,
 			});
 
-
 			const promises = [];
 
 			const fieldValidation = Boolean(field);
 			const formValidation = !fieldValidation || getValue(form.validationOptions, 'validateForm', 'normal') === 'always';
 
 			if (!fieldValidation) {
-				form.getFields().forEach(({ name }) => {
-					promises.push({ [name]: form.settings.defaultFieldMeta });
+				form.getFields().forEach(({ name, mounted }) => {
+					if (mounted) {
+						promises.push({ [name]: form.settings.defaultFieldMeta });
+					}
 				});
 			}
 
@@ -115,24 +116,6 @@ export const formDefaults = {
 		},
 
 		onEndValidate({ form, data }) {
-			// This function awaits response with the following shape:
-			// data = [
-			//     {
-			//        name: {
-			//           error: 'This.field is required'
-			//        },
-			//        password: {
-			//           error: null
-			//        }
-			//     },
-			//     {
-			//        password: {
-			//           error: 'Password is too easy'
-			//        }
-			//     }
-			// ]
-			//console.log(data)
-
 			const { fieldMeta } = form.settings;
 			const validations = mergeValidations(data, this.fieldMeta);
 
@@ -153,22 +136,22 @@ export const formDefaults = {
 			form.setMeta({
 				validating: false,
 			});
+
+			form.updateForm();
+
+			return Vue.nextTick();
 		},
-		onSubmit({ form, params }) {
-			form.emit('submit', { form, params });
+		onSubmit({ form, payload }) {
+			form.emit('submit', { form, payload });
 		},
-		onStartSubmit({ form, params }) {
+		onStartSubmit({ form, payload }) {
 			form.setMeta({
 				submitCount: form.meta.submitCount + 1
 			});
-			form.getFields().forEach(field => {
-				form.setFieldMeta(field.name, {
-					touched: true,
-				});
-			});
+			form.touchFields();
 			return form.validate().then(() => {
 				if (form.meta.valid) {
-					const promise = form.onSubmit({ form, params, values: freeze(form.values) });
+					const promise = form.onSubmit({ form, values: freeze(form.values), payload });
 					if (isPromise(promise)) {
 						form.setMeta({
 							submitting: true,
@@ -293,7 +276,7 @@ export default {
 			values: {},
 			fields: {}
 		};
-		for (const name of ownProperties(this.formMeta)) {
+		for (const name of (ownProperties({ ...this.formMeta, ...this.initialFormMeta }))) {
 			data.meta[name] = isUndefined(this.initialFormMeta[name]) ? this.formMeta[name].default : this.initialFormMeta[name];
 		}
 		return data;
@@ -385,7 +368,16 @@ export default {
 				validateField: this.validateField,
 				mountField: this.mountField,
 				unmountField: this.unmountField,
+				updateForm: this.updateForm,
 				submit: this.submit,
+				touchFields: this.touchFields,
+				dispatch: (type, payload) => {
+					this.$emit('action', {
+						type,
+						payload,
+						form: this.interface()
+					});
+				},
 				// Behavior
 				onSubmit: this.onSubmit,
 				// Props
@@ -395,6 +387,16 @@ export default {
 					this.$emit(...args);
 				}
 			};
+		},
+
+		touchFields(mounted = false) {
+			this.getFields().forEach(field => {
+				if (!mounted || field.mounted) {
+					this.setFieldMeta(field.name, {
+						touched: true,
+					});
+				}
+			});
 		},
 
 		getFieldRef(field) {
@@ -580,7 +582,7 @@ export default {
 			this.updateForm(valuesChanged);
 		},
 		setFieldValue(name, value, options = {}) {
-			return new Promise((resolve, reject) => {
+			return new Promise((resolve) => {
 				if (name in this.fields) {
 					const field = this.fields[name];
 					if (!field || !field.controlled || options.forced) {
@@ -648,18 +650,22 @@ export default {
 		},
 
 		setMeta(value, preventUpdate = false) {
-			const { formMeta } = this.settings;
-			formMeta.forEach(meta => {
-				if (meta.name in value) {
-					if (meta.name in this.meta) {
-						this.meta[meta.name] = value[meta.name];
+			if (isObject(value)) {
+				ownProperties(value).forEach(name => {
+					if (name in this.meta) {
+						this.meta[name] = value[name];
 					} else {
-						Vue.set(this.meta, meta.name, value[meta.name]);
+						Vue.set(this.meta, name, value[name]);
 					}
+				});
+				if (!preventUpdate) {
+					this.updateForm();
 				}
-			});
-			if (!preventUpdate) {
-				this.updateForm();
+			} else if (process.env.NODE_ENV !== 'production') {
+				console.warn(
+					`Warning: prevented the attempt to set form "${this.name || 'unnamed'}" meta that is not an object`,
+					value
+				);
 			}
 		},
 		runFormValidation() {
@@ -713,13 +719,11 @@ export default {
 			const name = isObject(field) ? field.getName() : field;
 			return this.onStartValidate({ form: this, field: name }).then(
 				(data) => {
-					this.onEndValidate({
+					return this.onEndValidate({
 						form: this.interface(),
 						field,
 						data
 					});
-					this.updateForm();
-					return Vue.nextTick();
 				}
 			);
 		},
@@ -731,16 +735,16 @@ export default {
 		},
 		setFieldsMeta(values) {
 			const normalizedValues = flattenMeta(values);
-			for (const name of ownProperties(flattenMeta)) {
+			for (const name of ownProperties(normalizedValues)) {
 				if (this.fields[name]) {
 					this.setFieldMeta(name, normalizedValues[name]);
 				}
 			}
 		},
-		submit(params) {
-			this.onStartSubmit({
+		submit(payload) {
+			return this.onStartSubmit({
 				form: this.interface(),
-				params
+				payload
 			});
 		},
 		updateForm(valuesChanged) {

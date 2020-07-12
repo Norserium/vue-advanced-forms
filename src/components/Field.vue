@@ -82,8 +82,14 @@ export default {
 			default: 'span'
 		},
 		value: {},
-		defaultValue: {
+		initialValue: {
 			default: ''
+		},
+		initialMeta: {
+			default() {
+				return {};
+			},
+			type: Object
 		},
 		validation: {
 			type: [String, Function, Object],
@@ -203,7 +209,7 @@ export default {
 		}
 	},
 	updated() {
-		console.log('rerender', this.$name)
+		console.log('rerender', this.$name);
 	},
 	methods: {
 		interface() {
@@ -224,7 +230,7 @@ export default {
 				set value(value) {
 					self.$form.setFieldValue(self.$name, value, { internal: true }).then(() => {
 						self.onChange({ field: self.interface(), form: self.$form });
-					})
+					});
 				},
 				// Events
 				events: {
@@ -256,7 +262,7 @@ export default {
 			return this.$form;
 		},
 		getInitialValue() {
-			return this.defaultValue;
+			return this.initialValue;
 		},
 		getLinkedFields() {
 			return this.onGetLinkedFields({ field: this.interface(), form: this.$form });
@@ -264,7 +270,7 @@ export default {
 		setValue(value) {
 			this.$form.setFieldValue(this.$name, value, { internal: true }).then(() => {
 				this.onChange({ field: this.interface(), form: this.$form });
-			})
+			});
 		},
 		setMeta(meta) {
 			this.$form.setFieldMeta(this.$name, meta);
